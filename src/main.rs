@@ -1,6 +1,8 @@
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::{
     env, fs,
-    io::{stdin, Read},
+    io::{self, Write},
 };
 
 fn main() {
@@ -64,9 +66,14 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
 }
 
 fn read_char() -> u8 {
-    let mut buf = vec![0; 1];
-    stdin()
-        .read_exact(&mut buf)
-        .expect("Error while reading from console");
-    return buf[0];
+    enable_raw_mode(); //allows capturing of key events
+    let key_event = loop {
+        // poll for events
+        if event::poll()? {
+            if let Event::Key(key_event) = event::read()? {
+                break key_event;
+            }
+        }
+    }
+    key_event.code.
 }
