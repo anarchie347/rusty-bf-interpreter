@@ -1,11 +1,16 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use core::time;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use std::fmt::Error;
 use std::{
     env, fs,
     io::{self, Write},
 };
 
 fn main() {
+    read_char();
+    return;
+
     let args: Vec<String> = env::args().collect();
 
     let file_path = &args[1];
@@ -35,7 +40,7 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
             '>' => pointer += 1,
             '<' => pointer -= 1,
             '.' => print!("{}", mem_tape[pointer] as char),
-            ',' => mem_tape[pointer] = read_char(),
+            ',' => mem_tape[pointer] = 6, //read_char(),
             '[' => match mem_tape[pointer] {
                 0 => {
                     //move pointer to index of associated closing bracket
@@ -65,15 +70,22 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
     }
 }
 
-fn read_char() -> u8 {
-    enable_raw_mode(); //allows capturing of key events
-    let key_event = loop {
-        // poll for events
-        if event::poll()? {
-            if let Event::Key(key_event) = event::read()? {
-                break key_event;
+fn read_char() -> () {
+    _ = enable_raw_mode(); //allows capturing of key events
+    loop {
+        if let Event::Key(key_event) = event::read().unwrap() {
+            if key_event.kind == KeyEventKind::Release {
+                //ignores key up event
+                continue;
             }
-        }
+            match key_event.code {
+                KeyCode::Char(c) => {
+                    println!("YOU PRESSED:{}", c);
+                    break;
+                }
+                _ => println!("NOT CHAR KEY:{:?}", key_event.code),
+            };
+        };
     }
-    key_event.code.
+    _ = disable_raw_mode();
 }
