@@ -40,7 +40,7 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
             '>' => pointer += 1,
             '<' => pointer -= 1,
             '.' => print!("{}", mem_tape[pointer] as char),
-            ',' => mem_tape[pointer] = 6, //read_char(),
+            ',' => mem_tape[pointer] = read_char(),
             '[' => match mem_tape[pointer] {
                 0 => {
                     //move pointer to index of associated closing bracket
@@ -70,10 +70,12 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
     }
 }
 
-fn read_char() -> () {
-    _ = enable_raw_mode(); //allows capturing of key events
-    loop {
-        if let Event::Key(key_event) = event::read().unwrap() {
+fn read_char() -> u8 {
+    enable_raw_mode().expect("There was an error enabling raw mode for reading input"); //allows capturing of key events
+    let chr = loop {
+        if let Event::Key(key_event) =
+            event::read().expect("There was an error reading a key event")
+        {
             if key_event.kind == KeyEventKind::Release {
                 //ignores key up event
                 continue;
@@ -81,11 +83,12 @@ fn read_char() -> () {
             match key_event.code {
                 KeyCode::Char(c) => {
                     println!("YOU PRESSED:{}", c);
-                    break;
+                    break c;
                 }
                 _ => println!("NOT CHAR KEY:{:?}", key_event.code),
             };
         };
-    }
-    _ = disable_raw_mode();
+    };
+    disable_raw_mode().expect("There was an error disabling raw mode for reading input");
+    chr as u8
 }
