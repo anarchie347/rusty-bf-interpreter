@@ -15,12 +15,12 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let source: Vec<char> = source_string.chars().collect();
-    let mut mem_tape: Vec<u8> = vec![0; 30000];
+    let source = source_string.as_bytes();
+    let mut mem_tape = [0u8; 30000];
     execute(source, &mut mem_tape, 0, true)
 }
 
-fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize, timings: bool) {
+fn execute(source: &[u8], mem_tape: &mut [u8], initial_pointer_pos: usize, timings: bool) {
     let mut loop_index_stack: Vec<usize> = Vec::new();
     let mut code_index: usize = 0;
 
@@ -31,32 +31,32 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
 
     while code_index < source.len() {
         match source[code_index] {
-            '+' => mem_tape[pointer] = mem_tape[pointer].wrapping_add(1),
-            '-' => mem_tape[pointer] = mem_tape[pointer].wrapping_sub(1),
-            '>' => pointer += 1,
-            '<' => pointer -= 1,
-            '.' => write_char(mem_tape[pointer]),
-            ',' => {
+            b'+' => mem_tape[pointer] = mem_tape[pointer].wrapping_add(1),
+            b'-' => mem_tape[pointer] = mem_tape[pointer].wrapping_sub(1),
+            b'>' => pointer += 1,
+            b'<' => pointer -= 1,
+            b'.' => write_char(mem_tape[pointer]),
+            b',' => {
                 let start_input = std::time::Instant::now();
                 mem_tape[pointer] = read_char();
                 input_time += start_input.elapsed();
             }
-            '[' => match mem_tape[pointer] {
+            b'[' => match mem_tape[pointer] {
                 0 => {
                     //move pointer to index of associated closing bracket
                     let mut open_bracket_counter = 0;
                     while open_bracket_counter >= 0 {
                         code_index += 1;
                         match source[code_index] {
-                            '[' => open_bracket_counter += 1,
-                            ']' => open_bracket_counter -= 1,
+                            b'[' => open_bracket_counter += 1,
+                            b']' => open_bracket_counter -= 1,
                             _ => (),
                         }
                     }
                 }
                 _ => loop_index_stack.push(code_index),
             },
-            ']' => match mem_tape[pointer] {
+            b']' => match mem_tape[pointer] {
                 0 => _ = loop_index_stack.pop(),
                 _ => {
                     code_index = *loop_index_stack
@@ -64,7 +64,7 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
                         .expect(&format!("Encountered ] with unmatched [ at {}", code_index))
                 }
             },
-            '?' => println!("CELL VAL: {}", mem_tape[pointer]), //for debugging purposes
+            b'?' => println!("CELL VAL: {}", mem_tape[pointer]), //for debugging purposes
             _ => (),
         }
         code_index += 1;
