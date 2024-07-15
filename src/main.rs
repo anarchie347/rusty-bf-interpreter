@@ -1,16 +1,8 @@
-use core::time;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use std::fmt::Error;
-use std::{
-    env, fs,
-    io::{self, Write},
-};
+use std::{env, fs};
 
 fn main() {
-    read_char();
-    return;
-
     let args: Vec<String> = env::args().collect();
 
     let file_path = &args[1];
@@ -23,7 +15,6 @@ fn main() {
         }
     };
     let source: Vec<char> = source_string.chars().collect();
-    //let source: Vec<char> = ",.".chars().collect();
     let mut mem_tape: Vec<u8> = vec![0; 30000];
     execute(source, &mut mem_tape, 0)
 }
@@ -80,13 +71,9 @@ fn read_char() -> u8 {
                 //ignores key up event
                 continue;
             }
-            match key_event.code {
-                KeyCode::Char(c) => {
-                    println!("YOU PRESSED:{}", c);
-                    break c;
-                }
-                _ => println!("NOT CHAR KEY:{:?}", key_event.code),
-            };
+            if let KeyCode::Char(c) = key_event.code {
+                break c;
+            }
         };
     };
     disable_raw_mode().expect("There was an error disabling raw mode for reading input");
