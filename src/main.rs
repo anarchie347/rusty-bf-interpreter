@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::{env, fs};
 
@@ -55,6 +55,7 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
                         .expect(&format!("Encountered ] with unmatched [ at {}", code_index))
                 }
             },
+            '?' => println!("CELL VAL: {}", mem_tape[pointer]),
             _ => (),
         }
         code_index += 1;
@@ -71,13 +72,14 @@ fn read_char() -> u8 {
                 //ignores key up event
                 continue;
             }
-            if let KeyCode::Char(c) = key_event.code {
-                break c;
+            check_key_event_quit(key_event);
+            if let Some(ascii) = key_code_to_ascii(key_event.code) {
+                break ascii;
             }
         };
     };
     disable_raw_mode().expect("There was an error disabling raw mode for reading input");
-    chr as u8
+    chr
 }
 
 fn write_char(chr: u8) {
@@ -86,5 +88,28 @@ fn write_char(chr: u8) {
         println!();
     } else {
         print!("{}", chr as char);
+    }
+}
+
+fn check_key_event_quit(key_event: KeyEvent) {
+    //allows Ctrl+C to still be used to quit process when reading a key input
+    println!("{:?}", key_event);
+    if key_event.modifiers.contains(KeyModifiers::CONTROL)
+        && (key_event.code == KeyCode::Char('c') || key_event.code == KeyCode::Char('C'))
+    {
+        std::process::exit(0);
+    }
+}
+
+fn key_code_to_ascii(key_code: KeyCode) -> Option<u8> {
+    //maps some non-display characters not matched by KeyCode::Char to corresponding ascii values
+    match key_code {
+        KeyCode::Char(c) => Some(c as u8),
+        KeyCode::Backspace => Some(8),
+        KeyCode::Enter => Some(10),
+        KeyCode::Tab => Some(9),
+        KeyCode::BackTab => Some(9),
+        KeyCode::Esc => Some(27),
+        _ => None,
     }
 }
