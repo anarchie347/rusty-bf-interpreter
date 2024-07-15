@@ -93,7 +93,6 @@ fn write_char(chr: u8) {
 
 fn check_key_event_quit(key_event: KeyEvent) {
     //allows Ctrl+C to still be used to quit process when reading a key input
-    println!("{:?}", key_event);
     if key_event.modifiers.contains(KeyModifiers::CONTROL)
         && (key_event.code == KeyCode::Char('c') || key_event.code == KeyCode::Char('C'))
     {
