@@ -1,6 +1,7 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use std::{env, fs};
+use std::io::Write;
+use std::{env, fs, io};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -79,6 +80,7 @@ fn read_char() -> u8 {
         };
     };
     disable_raw_mode().expect("There was an error disabling raw mode for reading input");
+    write_char(chr);
     chr
 }
 
@@ -88,6 +90,7 @@ fn write_char(chr: u8) {
         println!();
     } else {
         print!("{}", chr as char);
+        io::stdout().flush().expect("Error printing character");
     }
 }
 
