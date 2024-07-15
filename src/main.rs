@@ -1,6 +1,7 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::io::Write;
+use std::time::Duration;
 use std::{env, fs, io};
 
 fn main() {
@@ -16,14 +17,18 @@ fn main() {
     };
     let source: Vec<char> = source_string.chars().collect();
     let mut mem_tape: Vec<u8> = vec![0; 30000];
-    execute(source, &mut mem_tape, 0)
+    execute(source, &mut mem_tape, 0, true)
 }
 
-fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize) {
+fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize, timings: bool) {
     let mut loop_index_stack: Vec<usize> = Vec::new();
     let mut code_index: usize = 0;
 
     let mut pointer: usize = initial_pointer_pos;
+
+    let mut input_time = Duration::new(0, 0);
+    let total_time = std::time::Instant::now();
+
     while code_index < source.len() {
         match source[code_index] {
             '+' => mem_tape[pointer] = mem_tape[pointer].wrapping_add(1),
@@ -31,7 +36,11 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
             '>' => pointer += 1,
             '<' => pointer -= 1,
             '.' => write_char(mem_tape[pointer]),
-            ',' => mem_tape[pointer] = read_char(),
+            ',' => {
+                let start_input = std::time::Instant::now();
+                mem_tape[pointer] = read_char();
+                input_time += start_input.elapsed();
+            }
             '[' => match mem_tape[pointer] {
                 0 => {
                     //move pointer to index of associated closing bracket
@@ -59,6 +68,15 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
             _ => (),
         }
         code_index += 1;
+    }
+    if timings {
+        let total_duration = total_time.elapsed();
+        println!();
+        println!("Total execution time: {}ms", total_duration.as_millis());
+        println!(
+            "Compute time: {}ms",
+            (total_duration - input_time).as_millis()
+        );
     }
 }
 
