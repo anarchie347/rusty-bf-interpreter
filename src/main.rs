@@ -55,7 +55,7 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
                         .expect(&format!("Encountered ] with unmatched [ at {}", code_index))
                 }
             },
-            '?' => println!("CELL VAL: {}", mem_tape[pointer]),
+            '?' => println!("CELL VAL: {}", mem_tape[pointer]), //for debugging purposes
             _ => (),
         }
         code_index += 1;
