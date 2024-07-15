@@ -7,7 +7,6 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let file_path = &args[1];
-    println!("B: {}", file_path);
     let source_string = match fs::read_to_string(file_path) {
         Ok(val) => val,
         Err(e) => {
