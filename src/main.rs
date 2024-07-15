@@ -30,7 +30,7 @@ fn execute(source: Vec<char>, mem_tape: &mut Vec<u8>, initial_pointer_pos: usize
             '-' => mem_tape[pointer] = mem_tape[pointer].wrapping_sub(1),
             '>' => pointer += 1,
             '<' => pointer -= 1,
-            '.' => print!("{}", mem_tape[pointer] as char),
+            '.' => write_char(mem_tape[pointer]),
             ',' => mem_tape[pointer] = read_char(),
             '[' => match mem_tape[pointer] {
                 0 => {
@@ -78,4 +78,13 @@ fn read_char() -> u8 {
     };
     disable_raw_mode().expect("There was an error disabling raw mode for reading input");
     chr as u8
+}
+
+fn write_char(chr: u8) {
+    //used to correctly deal with newline characters. BF uses 10 as newline, but windows uses 10 and 13
+    if chr == 10 {
+        println!();
+    } else {
+        print!("{}", chr as char);
+    }
 }
