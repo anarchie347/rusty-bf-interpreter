@@ -1,3 +1,4 @@
+//use core::fmt;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::io::Write;
@@ -17,10 +18,15 @@ fn main() {
     };
     let source = source_string.as_bytes();
     let mut mem_tape = [0u8; 30000];
-    execute(source, &mut mem_tape, 0, true)
+    execute(source, &mut mem_tape, 0, true).expect("It crashed");
 }
 
-fn execute(source: &[u8], mem_tape: &mut [u8], initial_pointer_pos: usize, timings: bool) {
+fn execute(
+    source: &[u8],
+    mem_tape: &mut [u8],
+    initial_pointer_pos: usize,
+    timings: bool,
+) -> Result<(), BFExecuteError> {
     let mut loop_index_stack: Vec<usize> = Vec::new();
     let mut code_index: usize = 0;
 
@@ -33,8 +39,18 @@ fn execute(source: &[u8], mem_tape: &mut [u8], initial_pointer_pos: usize, timin
         match source[code_index] {
             b'+' => mem_tape[pointer] = mem_tape[pointer].wrapping_add(1),
             b'-' => mem_tape[pointer] = mem_tape[pointer].wrapping_sub(1),
-            b'>' => pointer += 1,
-            b'<' => pointer -= 1,
+            b'>' => {
+                pointer += 1;
+                if pointer == mem_tape.len() {
+                    return Err(BFExecuteError::PointerOverflow(mem_tape.len()));
+                }
+            }
+            b'<' => {
+                if pointer == 0 {
+                    return Err(BFExecuteError::PointerUnderflow);
+                }
+                pointer -= 1;
+            }
             b'.' => write_char(mem_tape[pointer]),
             b',' => {
                 let start_input = std::time::Instant::now();
@@ -47,6 +63,9 @@ fn execute(source: &[u8], mem_tape: &mut [u8], initial_pointer_pos: usize, timin
                     let mut open_bracket_counter = 0;
                     while open_bracket_counter >= 0 {
                         code_index += 1;
+                        if code_index == source.len() {
+                            return Err(BFExecuteError::MissingCloseBracket);
+                        }
                         match source[code_index] {
                             b'[' => open_bracket_counter += 1,
                             b']' => open_bracket_counter -= 1,
@@ -59,12 +78,13 @@ fn execute(source: &[u8], mem_tape: &mut [u8], initial_pointer_pos: usize, timin
             b']' => match mem_tape[pointer] {
                 0 => _ = loop_index_stack.pop(),
                 _ => {
-                    code_index = *loop_index_stack
-                        .last()
-                        .expect(&format!("Encountered ] with unmatched [ at {}", code_index))
+                    code_index = match loop_index_stack.last() {
+                        Some(i) => *i,
+                        None => return Err(BFExecuteError::MissingOpenBracket),
+                    }
                 }
             },
-            b'?' => println!("CELL VAL: {}", mem_tape[pointer]), //for debugging purposes
+            b'?' => println!("CELL[{}] VAL: {}", pointer, mem_tape[pointer]), //for debugging purposes
             _ => (),
         }
         code_index += 1;
@@ -77,7 +97,8 @@ fn execute(source: &[u8], mem_tape: &mut [u8], initial_pointer_pos: usize, timin
             "Compute time: {}ms",
             (total_duration - input_time).as_millis()
         );
-    }
+    };
+    Ok(())
 }
 
 fn read_char() -> u8 {
@@ -131,4 +152,12 @@ fn key_code_to_ascii(key_code: KeyCode) -> Option<u8> {
         KeyCode::Esc => Some(27),
         _ => None,
     }
+}
+
+#[derive(Debug)]
+enum BFExecuteError {
+    PointerUnderflow,
+    PointerOverflow(usize),
+    MissingCloseBracket,
+    MissingOpenBracket,
 }
